@@ -1,6 +1,6 @@
 ---
 title: Campus Me - AI Academic Document Suite
-emoji: �
+emoji: 🤖
 colorFrom: blue
 colorTo: purple
 sdk: gradio
