@@ -8,6 +8,8 @@ from .content_generator import ContentGenerator
 from .humanizer import Humanizer
 from .citation_manager import CitationManager
 from .detector import AIDetector
+from .material_analyzer import MaterialAnalyzer, MaterialProcessor
+from .file_manager import FileManager, FileCleanupScheduler
 
 __all__ = [
     "DocumentParser",
@@ -16,4 +18,8 @@ __all__ = [
     "Humanizer",
     "CitationManager",
     "AIDetector",
+    "MaterialAnalyzer",
+    "MaterialProcessor",
+    "FileManager",
+    "FileCleanupScheduler",
 ]
