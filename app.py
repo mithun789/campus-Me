@@ -244,7 +244,7 @@ def load_template(template_name: str) -> str:
         "\n".join(f"  {i+1}. {section}" for i, section in enumerate(template['sections']))
     )
     
-        return description
+    return description
 
 
 # ==================== TAB 5: AI CAPABILITIES RESEARCH ====================
