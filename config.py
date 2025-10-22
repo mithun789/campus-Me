@@ -4,7 +4,6 @@ Configuration settings for AI Academic Document Suite
 
 # AI Models and Generation
 TEXT_MODEL = "mistralai/Mistral-7B-Instruct-v0.1"
-MAX_GENERATION_LENGTH = 4096
 TEMPERATURE = 0.7
 TOP_P = 0.95
 CHUNK_SIZE = 2000
@@ -28,8 +27,8 @@ DEFAULT_CITATION_STYLE = "APA"
 # Visualization Settings
 CHART_STYLE = "seaborn"
 COLOR_PALETTE = "Set2"
-DPI = 300  # High quality for publications
-FIGURE_WIDTH = 10
+DPI = 100  # ✅ OPTIMIZED: Web resolution (not 300 for print)
+FIGURE_WIDTH = 8  # ✅ OPTIMIZED: Reduced from 10
 FIGURE_HEIGHT = 6
 
 # Export Formats
@@ -40,6 +39,9 @@ DEFAULT_FORMATS = ["pdf", "docx"]
 MAX_GENERATION_TIME = 180  # 3 minutes
 CACHE_ENABLED = True
 MAX_FILE_SIZE_MB = 50
+MAX_GENERATION_LENGTH = 256  # ✅ OPTIMIZED: Per section (not 4096)
+REQUEST_QUEUE_SIZE = 5  # ✅ OPTIMIZED: Limit concurrent requests
+REQUEST_TIMEOUT = 120  # ✅ OPTIMIZED: 2 minute timeout
 
 # Document Sections
 DEFAULT_SECTIONS = [
