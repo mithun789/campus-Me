@@ -244,7 +244,190 @@ def load_template(template_name: str) -> str:
         "\n".join(f"  {i+1}. {section}" for i, section in enumerate(template['sections']))
     )
     
-    return description
+        return description
+
+
+# ==================== TAB 5: AI CAPABILITIES RESEARCH ====================
+
+def analyze_ai_capability(capability_name: str) -> str:
+    """Analyze specific AI capability."""
+    try:
+        from src.research_engine import AICapabilitiesAnalyzer
+        analyzer = AICapabilitiesAnalyzer()
+        
+        capability_data = analyzer.get_capability_details(capability_name)
+        score = analyzer.score_capability(capability_name)
+        
+        result = f"""
+### {capability_name.replace('_', ' ').title()}
+
+**Description:** {capability_data.get('description', 'N/A')}
+
+**Examples:**
+"""
+        for example in capability_data.get('examples', [])[:5]:
+            result += f"- {example}\n"
+        
+        result += f"""
+**Maturity Level:** {score.get('maturity_score', 0)}/100
+**Reliability:** {score.get('reliability_score', 0)}/100  
+**Scalability:** {score.get('scalability_score', 0)}/100
+**Real-world Impact:** {score.get('real_world_impact', 'High')}
+
+**Confidence Level:** {capability_data.get('confidence_level', 'Very High')}
+"""
+        return result
+    except Exception as e:
+        return f"Error analyzing capability: {str(e)}"
+
+
+def generate_limitations_report() -> str:
+    """Generate limitations report."""
+    try:
+        from src.research_engine import AILimitationsAnalyzer
+        analyzer = AILimitationsAnalyzer()
+        
+        classification = analyzer.classify_limitations()
+        
+        report = """# AI LIMITATIONS: Comprehensive Analysis
+
+## Likely Never Solvable (Fundamental Barriers)
+
+These limitations are likely impossible with current computational paradigms:
+"""
+        for limitation in classification['likely_never_solvable']:
+            report += f"\n### {limitation.replace('_', ' ').title()}\n"
+            limitation_details = analyzer.get_limitation_details(limitation)
+            report += f"{limitation_details.get('description', 'N/A')}\n"
+        
+        report += """
+
+## Fundamental Barriers (Very Difficult)
+
+These are deeply hard problems but might be solvable:
+"""
+        for limitation in classification['fundamental_barriers'][:3]:
+            report += f"- {limitation.replace('_', ' ').title()}\n"
+        
+        report += """
+
+## Engineering Challenges (Solvable)
+
+These are engineering problems that can be addressed:
+"""
+        for limitation in classification['engineering_challenges'][:5]:
+            report += f"- {limitation.replace('_', ' ').title()}\n"
+        
+        return report
+    except Exception as e:
+        return f"Error generating report: {str(e)}"
+
+
+def analyze_human_advantage(advantage_name: str) -> str:
+    """Analyze specific human advantage."""
+    try:
+        from src.research_engine import HumanAIComparison
+        comparison = HumanAIComparison()
+        
+        advantage_data = comparison.analyze_human_advantage(advantage_name)
+        
+        result = f"""
+### {advantage_name.replace('_', ' ').title()}
+
+**Description:** {advantage_data.get('description', 'N/A')}
+
+**Examples:**
+"""
+        for example in advantage_data.get('examples', []):
+            result += f"- {example}\n"
+        
+        result += f"""
+**Why AI Cannot Replicate This:** {advantage_data.get('ai_cannot_replicate', 'Fundamental difference')}
+
+**Competitive Value:** {advantage_data.get('competitive_value', 'Very High')}
+
+**Implication:** This human advantage becomes MORE valuable in an AI-enabled world, not less.
+"""
+        return result
+    except Exception as e:
+        return f"Error analyzing advantage: {str(e)}"
+
+
+def compare_domain(domain: str) -> str:
+    """Compare AI vs Humans in specific domain."""
+    try:
+        from src.research_engine import HumanAIComparison
+        comparison = HumanAIComparison()
+        
+        domain_comparison = comparison.compare_domain(domain)
+        
+        result = f"""
+### {domain.replace('_', ' ').title()}
+
+**AI Strength:** {domain_comparison.get('ai_strength', 'N/A')}
+
+**Human Strength:** {domain_comparison.get('human_strength', 'N/A')}
+
+**Winner: {domain_comparison.get('winner', 'Unclear')}**
+
+**Analysis:** {domain_comparison.get('analysis', 'Both have advantages')}
+
+This demonstrates that AI and humans have complementary strengths rather than 
+one being universally superior. Optimal results come from collaboration.
+"""
+        return result
+    except Exception as e:
+        return f"Error comparing domain: {str(e)}"
+
+
+def generate_future_projection() -> str:
+    """Generate future AI capabilities projection."""
+    from src.research_engine import AdvancedReasoningEngine
+    
+    engine = AdvancedReasoningEngine()
+    projection = engine._project_future_capabilities()
+    
+    report = """# FUTURE AI CAPABILITIES PROJECTION (5-10 Years)
+
+## Likely Within 5 Years:
+"""
+    for capability in projection['next_5_years']:
+        report += f"- **{capability['capability'].replace('_', ' ').title()}**: {capability['potential_impact']}\n"
+    
+    report += """
+
+## Likely Within 10 Years:
+"""
+    for capability in projection['next_10_years']:
+        report += f"- **{capability['capability'].replace('_', ' ').title()}**: {capability['potential_impact']}\n"
+    
+    report += """
+
+## Still Unknown / Highly Uncertain:
+"""
+    for item in projection['still_unknown']:
+        report += f"- {item}\n"
+    
+    report += """
+
+## Likely Never Solvable:
+"""
+    for item in projection['likely_impossible']:
+        report += f"- {item}\n"
+    
+    return report
+
+
+def generate_full_research_analysis() -> str:
+    """Generate full comprehensive research analysis."""
+    try:
+        from src.research_engine import AdvancedReasoningEngine
+        engine = AdvancedReasoningEngine()
+        
+        analysis = engine.generate_research_paper_outline()
+        return analysis
+    except Exception as e:
+        return f"Error generating analysis: {str(e)}"
 
 
 # ==================== TAB 4: ANALYSIS & RESEARCH ====================
@@ -510,7 +693,161 @@ def create_interface():
                     outputs=[quality_output, detection_output, transparency_output]
                 )
 
-            # ========== TAB 5: ADVANCED SETTINGS ==========
+            # ========== TAB 5: AI CAPABILITIES RESEARCH ==========
+            with gr.Tab("🔬 AI Capabilities Research", id="tab_research"):
+                gr.Markdown("""
+                ## AI Capabilities, Limitations & Human Advantages
+                ### SLIIT Research Project: Understanding AI in Modern Context
+                
+                Comprehensive analysis of what AI can do, cannot do, and what humans do better.
+                """)
+                
+                with gr.Tabs():
+                    # Sub-tab 5.1: What AI Can Do
+                    with gr.Tab("What AI Can Do"):
+                        gr.Markdown("### Current AI Capabilities")
+                        
+                        with gr.Row():
+                            capability_select = gr.Dropdown(
+                                choices=[
+                                    "pattern_recognition",
+                                    "language_processing",
+                                    "data_analysis",
+                                    "optimization",
+                                    "task_automation",
+                                    "computer_vision",
+                                    "content_generation",
+                                    "recommendation_systems",
+                                    "voice_recognition",
+                                    "game_playing",
+                                    "scientific_discovery",
+                                    "parallel_processing",
+                                    "knowledge_retrieval",
+                                    "logical_reasoning"
+                                ],
+                                label="Select Capability",
+                                value="pattern_recognition"
+                            )
+                            capability_btn = gr.Button("Analyze", variant="primary")
+                        
+                        capability_output = gr.Markdown(label="Capability Details")
+                        
+                        capability_btn.click(
+                            fn=lambda cap: analyze_ai_capability(cap),
+                            inputs=capability_select,
+                            outputs=capability_output
+                        )
+                    
+                    # Sub-tab 5.2: What AI Cannot Do
+                    with gr.Tab("What AI Cannot Do"):
+                        gr.Markdown("### AI Limitations & Fundamental Barriers")
+                        
+                        limitation_report = gr.Textbox(
+                            value=generate_limitations_report(),
+                            label="AI Limitations Analysis",
+                            lines=20,
+                            interactive=False
+                        )
+                    
+                    # Sub-tab 5.3: What Humans Do Better
+                    with gr.Tab("What Humans Do Better"):
+                        gr.Markdown("### Human Advantages Over AI")
+                        
+                        with gr.Row():
+                            advantage_select = gr.Dropdown(
+                                choices=[
+                                    "creativity_and_novelty",
+                                    "general_intelligence",
+                                    "emotional_intelligence",
+                                    "common_sense",
+                                    "strategic_thinking",
+                                    "adaptability",
+                                    "embodied_understanding",
+                                    "moral_and_ethical_reasoning",
+                                    "intrinsic_motivation",
+                                    "complex_social_interaction",
+                                    "learning_from_failure",
+                                    "intuition_and_pattern_recognition",
+                                    "contextual_understanding",
+                                    "perspective_taking",
+                                    "meaning_making",
+                                    "physical_manipulation",
+                                    "communication",
+                                    "decision_making_under_uncertainty",
+                                    "meta_cognition"
+                                ],
+                                label="Select Human Advantage",
+                                value="creativity_and_novelty"
+                            )
+                            advantage_btn = gr.Button("Analyze", variant="primary")
+                        
+                        advantage_output = gr.Markdown(label="Advantage Details")
+                        
+                        advantage_btn.click(
+                            fn=lambda adv: analyze_human_advantage(adv),
+                            inputs=advantage_select,
+                            outputs=advantage_output
+                        )
+                    
+                    # Sub-tab 5.4: Domain Comparison
+                    with gr.Tab("AI vs Human by Domain"):
+                        gr.Markdown("### Comparison of AI and Human Capabilities by Domain")
+                        
+                        with gr.Row():
+                            domain_select = gr.Dropdown(
+                                choices=[
+                                    "mathematical_computation",
+                                    "creative_writing",
+                                    "image_recognition",
+                                    "strategic_planning",
+                                    "data_analysis",
+                                    "emotional_support",
+                                    "learning_new_skill",
+                                    "pattern_recognition",
+                                    "moral_judgment",
+                                    "physical_dexterity"
+                                ],
+                                label="Select Domain",
+                                value="mathematical_computation"
+                            )
+                            domain_btn = gr.Button("Compare", variant="primary")
+                        
+                        domain_output = gr.Markdown(label="Comparison Results")
+                        
+                        domain_btn.click(
+                            fn=lambda dom: compare_domain(dom),
+                            inputs=domain_select,
+                            outputs=domain_output
+                        )
+                    
+                    # Sub-tab 5.5: Future Projection
+                    with gr.Tab("Future AI Capabilities"):
+                        gr.Markdown("### What AI Will Likely Do in 5-10 Years")
+                        
+                        future_output = gr.Textbox(
+                            value=generate_future_projection(),
+                            label="Future Capabilities Projection",
+                            lines=20,
+                            interactive=False
+                        )
+                    
+                    # Sub-tab 5.6: Research Summary
+                    with gr.Tab("Full Research Analysis"):
+                        gr.Markdown("### Comprehensive SLIIT Research Summary")
+                        
+                        summary_btn = gr.Button("Generate Full Analysis", variant="primary")
+                        summary_output = gr.Textbox(
+                            label="Full Research Report",
+                            lines=30,
+                            interactive=False
+                        )
+                        
+                        summary_btn.click(
+                            fn=generate_full_research_analysis,
+                            outputs=summary_output
+                        )
+
+            # ========== TAB 6: ADVANCED SETTINGS ==========
             with gr.Tab("⚙️ Advanced Settings", id="tab_settings"):
                 gr.Markdown("### Customize Document Generation Settings")
                 
