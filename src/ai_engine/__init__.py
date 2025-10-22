@@ -10,6 +10,7 @@ from .citation_manager import CitationManager
 from .detector import AIDetector
 from .material_analyzer import MaterialAnalyzer, MaterialProcessor
 from .file_manager import FileManager, FileCleanupScheduler
+from .content_quality_enhancer import ContentQualityEnhancer
 
 __all__ = [
     "DocumentParser",
@@ -22,4 +23,5 @@ __all__ = [
     "MaterialProcessor",
     "FileManager",
     "FileCleanupScheduler",
+    "ContentQualityEnhancer",
 ]

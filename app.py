@@ -28,6 +28,7 @@ from src.data_engine import (
 from src.research_tools import (
     QualityMetrics, DocumentComparison, TransparencyLogger
 )
+from src.ai_engine import ContentQualityEnhancer
 from templates import DocumentTemplates, CitationFormats
 from utils import TextFormatter, FileHandler
 from src.optimization import optimization_manager, get_system_health
@@ -46,6 +47,7 @@ generator = ContentGenerator()
 humanizer = Humanizer()
 citation_mgr = CitationManager()
 detector = AIDetector()
+quality_enhancer = ContentQualityEnhancer()  # ✅ NEW: Quality enhancement
 
 pdf_gen = PDFGenerator()
 word_gen = WordGenerator()
@@ -115,6 +117,12 @@ def generate_document(
                 content_dict[section],
                 style=reqs.style
             )
+
+        # ✅ NEW: Enhance content quality (remove placeholders, improve readability)
+        content_dict = quality_enhancer.enhance_document_content(content_dict, title)
+        
+        # Get quality report after enhancement
+        quality_report = quality_enhancer.get_quality_report(content_dict)
 
         # Generate visualizations if requested
         tables_html = ""
