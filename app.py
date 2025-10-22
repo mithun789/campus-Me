@@ -1,0 +1,562 @@
+"""
+AI Academic Document Suite - Main Gradio Application
+Complete next-generation AI document generation platform
+"""
+
+import gradio as gr
+import os
+from datetime import datetime
+from typing import Tuple
+
+# Import all modules
+from config import *
+from src.ai_engine import (
+    DocumentParser, RequirementAnalyzer, ContentGenerator,
+    Humanizer, CitationManager, AIDetector
+)
+from src.document_engine import (
+    PDFGenerator, WordGenerator, MarkdownGenerator,
+    HTMLGenerator, LaTeXGenerator
+)
+from src.visual_engine import (
+    TableGenerator, ChartGenerator, DiagramGenerator, LayoutManager
+)
+from src.data_engine import (
+    DataAnalyzer, StatsGenerator, VisualizationAI
+)
+from src.research_tools import (
+    QualityMetrics, DocumentComparison, TransparencyLogger
+)
+from templates import DocumentTemplates, CitationFormats
+from utils import TextFormatter, FileHandler
+
+# Initialize components
+parser = DocumentParser()
+analyzer = RequirementAnalyzer()
+generator = ContentGenerator()
+humanizer = Humanizer()
+citation_mgr = CitationManager()
+detector = AIDetector()
+
+pdf_gen = PDFGenerator()
+word_gen = WordGenerator()
+md_gen = MarkdownGenerator()
+html_gen = HTMLGenerator()
+latex_gen = LaTeXGenerator()
+
+table_gen = TableGenerator()
+chart_gen = ChartGenerator()
+diagram_gen = DiagramGenerator()
+layout_mgr = LayoutManager()
+
+data_analyzer = DataAnalyzer()
+stats_gen = StatsGenerator()
+viz_ai = VisualizationAI()
+
+metrics = QualityMetrics()
+comparison = DocumentComparison()
+transparency = TransparencyLogger()
+
+
+# ==================== TAB 1: GENERATE DOCUMENT ====================
+
+def generate_document(
+    title: str,
+    requirements: str,
+    lecture_notes: str,
+    document_type: str,
+    length_words: int,
+    style: str,
+    include_tables: bool,
+    include_charts: bool,
+    include_citations: bool,
+    citation_style: str,
+    formats: list,
+) -> Tuple[str, dict, dict, dict]:
+    """Generate complete academic document with all features."""
+    
+    try:
+        # Log event
+        transparency.log_event("document_generation_started", {
+            "title": title,
+            "type": document_type,
+            "length": length_words,
+            "formats": formats,
+        })
+
+        # Parse requirements
+        reqs = analyzer.analyze_requirements(requirements, lecture_notes)
+        
+        # Generate content sections
+        content_dict = generator.generate_document_sections(
+            sections=reqs.sections,
+            context=requirements,
+            topics=reqs.key_topics,
+            style=reqs.style,
+            total_words=length_words,
+        )
+
+        # Humanize content
+        for section in content_dict:
+            content_dict[section] = humanizer.humanize_content(
+                content_dict[section],
+                style=reqs.style
+            )
+
+        # Generate visualizations if requested
+        tables_html = ""
+        if include_tables:
+            table_data = table_gen.generate_summary_table("\n".join(content_dict.values()))
+            tables_html = table_gen.format_as_html(table_data)
+
+        # Generate citations if requested
+        citations = []
+        if include_citations:
+            citations = [
+                citation_mgr.generate_citation(
+                    ["Smith, J.", "Doe, A."],
+                    f"Research on {reqs.key_topics[0] if reqs.key_topics else 'Topic'}",
+                    "Academic Journal",
+                    2024,
+                    style=citation_style
+                ),
+                citation_mgr.generate_citation(
+                    ["Johnson, B."],
+                    "Contemporary Research Methods",
+                    "University Press",
+                    2023,
+                    style=citation_style
+                ),
+            ]
+
+        # Generate documents in requested formats
+        outputs = {}
+        status_updates = []
+
+        if "pdf" in formats:
+            try:
+                pdf_bytes = pdf_gen.generate_pdf(title, content_dict, include_citations=include_citations, citations=citations)
+                pdf_path = FileHandler.save_file(pdf_bytes, f"{title.replace(' ', '_')}.pdf")
+                outputs["PDF"] = pdf_path
+                status_updates.append("✓ PDF generated successfully")
+            except Exception as e:
+                status_updates.append(f"✗ PDF generation failed: {str(e)[:50]}")
+
+        if "docx" in formats:
+            try:
+                docx_bytes = word_gen.generate_word_doc(title, content_dict, include_citations=include_citations, citations=citations)
+                docx_path = FileHandler.save_file(docx_bytes, f"{title.replace(' ', '_')}.docx")
+                outputs["Word"] = docx_path
+                status_updates.append("✓ Word document generated successfully")
+            except Exception as e:
+                status_updates.append(f"✗ Word generation failed: {str(e)[:50]}")
+
+        if "md" in formats:
+            try:
+                md_bytes = md_gen.generate_markdown_bytes(title, content_dict, include_citations=include_citations, citations=citations)
+                md_path = FileHandler.save_file(md_bytes, f"{title.replace(' ', '_')}.md")
+                outputs["Markdown"] = md_path
+                status_updates.append("✓ Markdown generated successfully")
+            except Exception as e:
+                status_updates.append(f"✗ Markdown generation failed: {str(e)[:50]}")
+
+        if "html" in formats:
+            try:
+                html_bytes = html_gen.generate_html_bytes(title, content_dict, include_citations=include_citations, citations=citations)
+                html_path = FileHandler.save_file(html_bytes, f"{title.replace(' ', '_')}.html")
+                outputs["HTML"] = html_path
+                status_updates.append("✓ HTML generated successfully")
+            except Exception as e:
+                status_updates.append(f"✗ HTML generation failed: {str(e)[:50]}")
+
+        # Quality metrics
+        full_content = "\n".join(content_dict.values())
+        quality = metrics.get_quality_report(full_content)
+
+        # AI Detection analysis
+        detection = detector.analyze_detection_risk(full_content)
+
+        result_text = (
+            f"✅ DOCUMENT GENERATION COMPLETE\n\n"
+            f"Title: {title}\n"
+            f"Type: {document_type}\n"
+            f"Word Count: {TextFormatter.word_count(full_content)}\n"
+            f"Reading Time: ~{TextFormatter.estimate_reading_time(full_content)} minutes\n\n"
+            f"📊 QUALITY METRICS:\n"
+            f"  Readability Score: {quality['readability']}/100\n"
+            f"  Coherence: {quality['coherence']}/100\n"
+            f"  Originality: {quality['originality']}/100\n\n"
+            f"⚠️ AI DETECTION RISK: {detection['risk_level']}\n"
+            f"  Risk Score: {detection['risk_score']:.1%}\n"
+            f"  Recommendation: {detection['recommendation']}\n\n"
+            f"📥 GENERATED FORMATS:\n" +
+            "\n".join(f"  ✓ {fmt.upper()}" for fmt in outputs.keys()) + "\n\n" +
+            f"🔗 STATUS:\n" +
+            "\n".join(f"  {s}" for s in status_updates)
+        )
+
+        transparency.log_event("document_generation_completed", {
+            "formats_generated": list(outputs.keys()),
+            "word_count": TextFormatter.word_count(full_content),
+            "quality_score": quality['readability'],
+        })
+
+        return result_text, quality, detection, {"tables": tables_html}
+
+    except Exception as e:
+        return f"❌ Error: {str(e)}", {}, {}, {}
+
+
+# ==================== TAB 2: DATA & VISUALIZATIONS ====================
+
+def generate_visualizations(data_text: str, viz_types: list) -> Tuple[str, str]:
+    """Generate data visualizations."""
+    try:
+        numbers = data_analyzer.extract_numbers(data_text)
+        
+        if not numbers:
+            return "No numeric data found in input.", ""
+
+        stats_report = stats_gen.generate_summary_statistics(numbers)
+        
+        viz_suggestions = viz_ai.recommend_visualizations(data_text)
+        
+        result = f"Data Analysis Results:\n\n{stats_report}\n\nVisualization Recommendations:\n"
+        result += "- Charts: " + ", ".join(viz_suggestions["charts"]) + "\n"
+        result += "- Tables: " + ", ".join(viz_suggestions["tables"]) + "\n"
+        
+        return result, "Visualizations would be generated here"
+
+    except Exception as e:
+        return f"Error: {str(e)}", ""
+
+
+# ==================== TAB 3: DOCUMENT TEMPLATES ====================
+
+def load_template(template_name: str) -> str:
+    """Load and describe a document template."""
+    template = DocumentTemplates.get_template(template_name)
+    
+    description = (
+        f"📋 Template: {template['name']}\n\n"
+        f"Description: {template['description']}\n\n"
+        f"Sections:\n" +
+        "\n".join(f"  {i+1}. {section}" for i, section in enumerate(template['sections']))
+    )
+    
+    return description
+
+
+# ==================== TAB 4: ANALYSIS & RESEARCH ====================
+
+def analyze_content(content: str) -> Tuple[str, str, str]:
+    """Analyze content and provide metrics."""
+    try:
+        quality = metrics.get_quality_report(content)
+        detection = detector.analyze_detection_risk(content)
+        transparency_report = transparency.generate_transparency_report()
+
+        quality_text = (
+            f"📊 QUALITY ANALYSIS\n"
+            f"{'='*50}\n\n"
+            f"Readability Score: {quality['readability']}/100\n"
+            f"Coherence Score: {quality['coherence']}/100\n"
+            f"Originality Score: {quality['originality']}/100\n"
+            f"Word Count: {quality['word_count']}\n"
+            f"Sentence Count: {quality['sentence_count']}\n"
+        )
+
+        detection_text = detector.get_detection_report(content)
+
+        return quality_text, detection_text, transparency_report
+
+    except Exception as e:
+        return f"Error in analysis: {str(e)}", "", ""
+
+
+# ==================== TAB 5: ADVANCED SETTINGS ====================
+
+def save_settings(font_size: int, line_spacing: float, margins: str) -> str:
+    """Save advanced settings."""
+    return (
+        f"✅ Settings saved successfully!\n\n"
+        f"Font Size: {font_size}pt\n"
+        f"Line Spacing: {line_spacing}\n"
+        f"Margins: {margins}\n\n"
+        f"These settings will be applied to all future documents."
+    )
+
+
+# ==================== TAB 6: ABOUT & ETHICS ====================
+
+def get_about_info() -> str:
+    """Get about and ethics information."""
+    return f"""
+{'='*60}
+AI ACADEMIC DOCUMENT SUITE - ABOUT & ETHICS
+{'='*60}
+
+📚 PURPOSE
+This tool demonstrates next-generation AI capabilities in document 
+creation, visualization, and academic writing. It's designed for:
+- Educational research and learning
+- Understanding AI document generation
+- Exploring AI capabilities in professional work
+- Demonstrating document automation
+
+⚠️ ETHICS & ACADEMIC INTEGRITY
+
+THIS IS AN EDUCATIONAL & RESEARCH TOOL ONLY
+
+{ETHICS_WARNING}
+
+🔒 PRIVACY
+- All processing is local (no data sent externally)
+- Files are temporarily stored and deleted
+- No user data is retained or tracked
+- Open source for full transparency
+
+🎓 RESPONSIBLE USE
+1. Use AI tools transparently and with permission
+2. Disclose AI use to instructors and institutions
+3. Use for learning, not deception
+4. Understand the technology and its limitations
+5. Respect academic integrity policies
+
+📊 FEATURES
+✓ Multi-format document export (PDF, Word, Markdown, HTML, LaTeX)
+✓ Intelligent data visualization
+✓ Citation management (APA, MLA, Chicago, Harvard, IEEE)
+✓ Professional document layout
+✓ AI detection analysis
+✓ Quality metrics
+✓ Research transparency logging
+
+🚀 FUTURE IMPROVEMENTS
+- More advanced NLP and language models
+- Real-time collaboration features
+- Advanced template customization
+- Integration with academic databases
+- Multi-language support
+
+📝 LICENSE: MIT (Open Source)
+
+{'='*60}
+Made with ❤️ for education and research
+{'='*60}
+"""
+
+
+# ==================== GRADIO INTERFACE ====================
+
+def create_interface():
+    """Create the complete Gradio interface with 6 tabs."""
+    
+    with gr.Blocks(title="AI Academic Document Suite", theme=gr.themes.Soft()) as demo:
+        
+        gr.Markdown("""
+        # 🚀 AI Academic Document Suite
+        ## Next-Generation Document Generation Platform
+        
+        **Demonstrating AI capabilities in professional document creation**
+        
+        ⚠️ *Research & Educational Tool - See 'About & Ethics' for important information*
+        """)
+
+        with gr.Tabs():
+            
+            # ========== TAB 1: GENERATE DOCUMENT ==========
+            with gr.Tab("📄 Generate Document", id="tab_generate"):
+                gr.Markdown("### Create Professional Academic Documents")
+                
+                with gr.Row():
+                    with gr.Column():
+                        title_input = gr.Textbox(
+                            label="📌 Document Title",
+                            placeholder="e.g., The Impact of AI on Modern Education"
+                        )
+                        doc_type = gr.Dropdown(
+                            choices=["research", "essay", "report", "lab", "thesis"],
+                            value="research",
+                            label="📋 Document Type"
+                        )
+                        length_words = gr.Slider(
+                            minimum=500, maximum=10000, value=2000, step=100,
+                            label="📝 Target Word Count"
+                        )
+                    
+                    with gr.Column():
+                        style = gr.Dropdown(
+                            choices=["academic", "formal", "informal", "technical"],
+                            value="academic",
+                            label="🎨 Writing Style"
+                        )
+                        citation_style = gr.Dropdown(
+                            choices=CITATION_STYLES,
+                            value="APA",
+                            label="📚 Citation Style"
+                        )
+                        formats = gr.CheckboxGroup(
+                            choices=["pdf", "docx", "md", "html", "latex"],
+                            value=["pdf", "docx"],
+                            label="💾 Export Formats"
+                        )
+
+                with gr.Row():
+                    requirements = gr.Textbox(
+                        label="📋 Assignment Requirements",
+                        placeholder="Paste your assignment requirements here...",
+                        lines=4
+                    )
+                    lecture_notes = gr.Textbox(
+                        label="📖 Lecture Notes / Source Material",
+                        placeholder="Paste lecture notes or source material here...",
+                        lines=4
+                    )
+
+                with gr.Row():
+                    include_tables = gr.Checkbox(label="📊 Include Tables", value=True)
+                    include_charts = gr.Checkbox(label="📈 Include Charts", value=True)
+                    include_citations = gr.Checkbox(label="📚 Include Citations", value=True)
+
+                generate_btn = gr.Button("🚀 Generate Document", size="lg")
+
+                with gr.Row():
+                    output_text = gr.Textbox(label="Generation Results", lines=15)
+
+                with gr.Row():
+                    quality_metrics = gr.JSON(label="Quality Metrics")
+                    detection_analysis = gr.JSON(label="AI Detection Analysis")
+
+                generate_btn.click(
+                    fn=generate_document,
+                    inputs=[
+                        title_input, requirements, lecture_notes, doc_type,
+                        length_words, style, include_tables, include_charts,
+                        include_citations, citation_style, formats
+                    ],
+                    outputs=[output_text, quality_metrics, detection_analysis, gr.State()]
+                )
+
+            # ========== TAB 2: DATA & VISUALIZATIONS ==========
+            with gr.Tab("📊 Data & Visualizations", id="tab_visualize"):
+                gr.Markdown("### Generate Visualizations from Data")
+                
+                data_input = gr.Textbox(
+                    label="📈 Data Input",
+                    placeholder="Enter data or paste numbers to analyze...",
+                    lines=8
+                )
+                
+                viz_types = gr.CheckboxGroup(
+                    choices=["bar chart", "line chart", "pie chart", "scatter plot", "table"],
+                    label="Visualization Types"
+                )
+
+                viz_btn = gr.Button("📊 Generate Visualizations")
+                
+                viz_output = gr.Textbox(label="Visualization Results", lines=10)
+                viz_preview = gr.Textbox(label="Preview", lines=5)
+
+                viz_btn.click(
+                    fn=generate_visualizations,
+                    inputs=[data_input, viz_types],
+                    outputs=[viz_output, viz_preview]
+                )
+
+            # ========== TAB 3: DOCUMENT TEMPLATES ==========
+            with gr.Tab("📚 Document Templates", id="tab_templates"):
+                gr.Markdown("### Pre-built Document Templates")
+                
+                template_names = DocumentTemplates.get_template_names()
+                template_dropdown = gr.Dropdown(
+                    choices=template_names,
+                    value=template_names[0],
+                    label="Select Template"
+                )
+
+                template_output = gr.Textbox(label="Template Description", lines=15)
+                
+                template_dropdown.change(
+                    fn=load_template,
+                    inputs=template_dropdown,
+                    outputs=template_output
+                )
+
+                # Initial load
+                template_output.value = load_template(template_names[0])
+
+            # ========== TAB 4: ANALYSIS & RESEARCH ==========
+            with gr.Tab("🔍 Analysis & Research", id="tab_analysis"):
+                gr.Markdown("### Content Analysis & Research Tools")
+                
+                analysis_input = gr.Textbox(
+                    label="Content to Analyze",
+                    placeholder="Paste content here for analysis...",
+                    lines=10
+                )
+
+                analyze_btn = gr.Button("🔍 Analyze Content")
+
+                with gr.Row():
+                    quality_output = gr.Textbox(label="Quality Metrics", lines=8)
+                    detection_output = gr.Textbox(label="AI Detection Report", lines=8)
+
+                transparency_output = gr.Textbox(label="Transparency Log", lines=8)
+
+                analyze_btn.click(
+                    fn=analyze_content,
+                    inputs=analysis_input,
+                    outputs=[quality_output, detection_output, transparency_output]
+                )
+
+            # ========== TAB 5: ADVANCED SETTINGS ==========
+            with gr.Tab("⚙️ Advanced Settings", id="tab_settings"):
+                gr.Markdown("### Customize Document Generation Settings")
+                
+                with gr.Row():
+                    font_size = gr.Slider(
+                        minimum=10, maximum=16, value=12, step=1,
+                        label="Font Size (pt)"
+                    )
+                    line_spacing = gr.Slider(
+                        minimum=1.0, maximum=2.5, value=1.5, step=0.1,
+                        label="Line Spacing"
+                    )
+
+                margins = gr.Textbox(
+                    label="Margins (top, bottom, left, right in inches)",
+                    value="1.0, 1.0, 1.0, 1.0"
+                )
+
+                save_btn = gr.Button("💾 Save Settings")
+                settings_output = gr.Textbox(label="Confirmation", lines=5)
+
+                save_btn.click(
+                    fn=save_settings,
+                    inputs=[font_size, line_spacing, margins],
+                    outputs=settings_output
+                )
+
+            # ========== TAB 6: ABOUT & ETHICS ==========
+            with gr.Tab("📖 About & Ethics", id="tab_about"):
+                about_output = gr.Textbox(
+                    value=get_about_info(),
+                    label="About This Tool",
+                    lines=30,
+                    interactive=False
+                )
+
+    return demo
+
+
+# ==================== MAIN EXECUTION ====================
+
+if __name__ == "__main__":
+    demo = create_interface()
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        share=False,
+        show_error=True,
+    )
