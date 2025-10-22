@@ -1,6 +1,7 @@
 """
 AI Academic Document Suite - Main Gradio Application
 Complete next-generation AI document generation platform
+Optimized for HF Spaces Free Tier (2vCPU + 16GB RAM)
 """
 
 import gradio as gr
@@ -29,6 +30,7 @@ from src.research_tools import (
 )
 from templates import DocumentTemplates, CitationFormats
 from utils import TextFormatter, FileHandler
+from src.optimization import optimization_manager, get_system_health
 
 # Initialize components
 parser = DocumentParser()
@@ -545,6 +547,13 @@ def create_interface():
         
         ⚠️ *Research & Educational Tool - See 'About & Ethics' for important information*
         """)
+        
+        # System health status
+        with gr.Row():
+            health = optimization_manager.check_memory_health()
+            health_status = "✅ HEALTHY" if health['status'] == 'HEALTHY' else f"⚠️ {health['status']}"
+            health_text = f"**System Status:** {health_status} | **Memory:** {health['ram_percent']:.1f}% | **Available:** {health['available_gb']:.1f}GB"
+            gr.Markdown(health_text)
 
         with gr.Tabs():
             
