@@ -31,6 +31,13 @@ from src.research_tools import (
 from templates import DocumentTemplates, CitationFormats
 from utils import TextFormatter, FileHandler
 from src.optimization import optimization_manager, get_system_health
+from utils.document_preview import DocumentPreviewManager, DocumentDisplayFormatter, DocumentAccessor
+from utils.document_viewer_ui import (
+    create_document_preview_section, create_full_document_viewer,
+    format_download_instructions, create_document_info_card,
+    create_quick_download_html, get_document_view_instructions,
+    create_access_history_display
+)
 
 # Initialize components
 parser = DocumentParser()
@@ -58,6 +65,10 @@ viz_ai = VisualizationAI()
 metrics = QualityMetrics()
 comparison = DocumentComparison()
 transparency = TransparencyLogger()
+
+# Document Preview & Download System
+preview_manager = DocumentPreviewManager()
+document_accessor = DocumentAccessor(preview_manager)
 
 
 # ==================== TAB 1: GENERATE DOCUMENT ====================
@@ -197,10 +208,31 @@ def generate_document(
             "\n".join(f"  {s}" for s in status_updates)
         )
 
+        # Register document for preview & download
+        doc_id = preview_manager.register_document(
+            title=title,
+            file_paths=outputs,
+            content_preview=full_content,
+            metadata={
+                "document_type": document_type,
+                "word_count": TextFormatter.word_count(full_content),
+                "reading_time": TextFormatter.estimate_reading_time(full_content),
+                "quality_score": quality['readability'],
+                "ai_detection_risk": detection['risk_level'],
+                "formats_available": list(outputs.keys())
+            }
+        )
+
+        # Add download information to result
+        result_text += f"\n\n{'=' * 60}\n"
+        result_text += format_download_instructions(doc_id, list(outputs.keys()))
+        result_text += f"{'=' * 60}\n"
+
         transparency.log_event("document_generation_completed", {
             "formats_generated": list(outputs.keys()),
             "word_count": TextFormatter.word_count(full_content),
             "quality_score": quality['readability'],
+            "document_id": doc_id,
         })
 
         return result_text, quality, detection, {"tables": tables_html}
@@ -432,6 +464,68 @@ def generate_full_research_analysis() -> str:
         return f"Error generating analysis: {str(e)}"
 
 
+# ==================== HELPER FUNCTION: ACCESS GENERATED DOCUMENTS ====================
+
+def _access_document(doc_id: str, preview_manager, document_accessor):
+    """
+    Access a generated document by its ID.
+    
+    Returns:
+        Tuple of (preview, info, full_content, pdf_file, word_file, markdown_file, html_file, latex_file)
+    """
+    try:
+        if not doc_id or not doc_id.strip():
+            return (
+                "❌ Please enter a Document ID",
+                "No document selected",
+                "",
+                None, None, None, None, None
+            )
+        
+        doc_info = preview_manager.get_document_info(doc_id)
+        if not doc_info:
+            return (
+                f"❌ Document ID '{doc_id}' not found",
+                "Unable to locate document",
+                "",
+                None, None, None, None, None
+            )
+        
+        # Get preview and info
+        preview = document_accessor.get_preview(doc_id)
+        info = document_accessor.get_document_info_formatted(doc_id)
+        full_content = doc_info.get("content_preview", "")
+        
+        # Prepare file downloads
+        file_paths = doc_info.get("file_paths", {})
+        
+        # Try to get each format
+        pdf_file = file_paths.get("PDF") if os.path.exists(file_paths.get("PDF", "")) else None
+        word_file = file_paths.get("Word") if os.path.exists(file_paths.get("Word", "")) else None
+        markdown_file = file_paths.get("Markdown") if os.path.exists(file_paths.get("Markdown", "")) else None
+        html_file = file_paths.get("HTML") if os.path.exists(file_paths.get("HTML", "")) else None
+        latex_file = file_paths.get("LaTeX") if os.path.exists(file_paths.get("LaTeX", "")) else None
+        
+        return (
+            preview,
+            info,
+            full_content,
+            pdf_file,
+            word_file,
+            markdown_file,
+            html_file,
+            latex_file
+        )
+    
+    except Exception as e:
+        return (
+            f"❌ Error accessing document: {str(e)}",
+            f"Error: {str(e)}",
+            "",
+            None, None, None, None, None
+        )
+
+
 # ==================== TAB 4: ANALYSIS & RESEARCH ====================
 
 def analyze_content(content: str) -> Tuple[str, str, str]:
@@ -628,6 +722,74 @@ def create_interface():
                         include_citations, citation_style, formats
                     ],
                     outputs=[output_text, quality_metrics, detection_analysis, gr.State()]
+                )
+
+            # ========== TAB 1B: DOCUMENT PREVIEW & DOWNLOAD ==========
+            with gr.Tab("📥 Download Documents", id="tab_download"):
+                gr.Markdown(get_document_view_instructions())
+                
+                with gr.Row():
+                    doc_id_input = gr.Textbox(
+                        label="📄 Document ID",
+                        placeholder="Paste your Document ID here to access generated documents",
+                        info="You can find the Document ID in your generation results"
+                    )
+                    access_btn = gr.Button("🔍 Access Document", size="lg")
+                
+                with gr.Row():
+                    with gr.Column():
+                        doc_preview = gr.Textbox(
+                            label="📋 Document Preview",
+                            lines=10,
+                            interactive=False,
+                            info="First 500 characters of your document"
+                        )
+                    with gr.Column():
+                        doc_info = gr.Textbox(
+                            label="ℹ️ Document Information",
+                            lines=10,
+                            interactive=False,
+                            info="Format, size, quality, and other metadata"
+                        )
+                
+                with gr.Row():
+                    download_pdf = gr.File(label="📄 Download PDF", interactive=False)
+                    download_word = gr.File(label="📝 Download Word", interactive=False)
+                    download_markdown = gr.File(label="📋 Download Markdown", interactive=False)
+                
+                with gr.Row():
+                    download_html = gr.File(label="🌐 Download HTML", interactive=False)
+                    download_latex = gr.File(label="📐 Download LaTeX", interactive=False)
+                
+                with gr.Row():
+                    full_content = gr.Textbox(
+                        label="📖 Full Document Content",
+                        lines=15,
+                        interactive=False,
+                        info="Complete document text"
+                    )
+                
+                access_btn.click(
+                    fn=lambda doc_id: _access_document(doc_id, preview_manager, document_accessor),
+                    inputs=[doc_id_input],
+                    outputs=[
+                        doc_preview, doc_info, full_content,
+                        download_pdf, download_word, download_markdown,
+                        download_html, download_latex
+                    ]
+                )
+                
+                gr.Markdown("""
+                ### 💾 All Generated Documents
+                
+                Here's a history of all your generated documents:
+                """)
+                
+                doc_history = gr.Textbox(
+                    label="📜 Document History",
+                    lines=12,
+                    interactive=False,
+                    value=create_access_history_display(preview_manager.get_all_documents())
                 )
 
             # ========== TAB 2: DATA & VISUALIZATIONS ==========
