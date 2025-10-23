@@ -46,7 +46,25 @@ A revolutionary AI-powered document creation platform for Hugging Face Spaces de
 - Quality metrics and version comparison
 - AI detection risk analysis
 
-## 🔧 Configuration
+## � Documentation
+
+Complete documentation is available in the `docs/` folder:
+
+### 🚀 Getting Started
+- **[START_HERE_GITHUB.md](docs/START_HERE_GITHUB.md)** - Quick overview and setup guide
+- **[README_START_HERE.md](docs/README_START_HERE.md)** - Documentation navigation
+
+### ⚡ Performance & Optimization
+- **[HF_SPACES_OPTIMIZATION_ANALYSIS.md](docs/HF_SPACES_OPTIMIZATION_ANALYSIS.md)** - Performance analysis
+- **[OPTIMIZATION_IMPLEMENTATION_GUIDE.md](docs/OPTIMIZATION_IMPLEMENTATION_GUIDE.md)** - Optimization details
+- **[OPTIMIZATION_QUICK_REFERENCE.md](docs/OPTIMIZATION_QUICK_REFERENCE.md)** - Quick reference
+
+### 📖 GitHub & Deployment
+- **[GITHUB_QUICK_START.md](docs/GITHUB_QUICK_START.md)** - 5-minute GitHub setup
+- **[GITHUB_GUIDES_INDEX.md](docs/GITHUB_GUIDES_INDEX.md)** - All GitHub guides
+- **[GITHUB_PUBLICATION_GUIDE.md](docs/GITHUB_PUBLICATION_GUIDE.md)** - Complete GitHub guide
+
+### �🔧 Configuration
 
 All settings in `config.py`:
 - AI model selection and parameters
@@ -61,12 +79,15 @@ All settings in `config.py`:
 ├── app.py                    # Main Gradio application
 ├── config.py                 # Configuration
 ├── requirements.txt          # Dependencies
+├── docs/                     # Complete documentation (30+ guides)
 ├── src/
 │   ├── ai_engine/           # Content generation
 │   ├── document_engine/      # Document export
 │   ├── visual_engine/        # Visualizations
 │   ├── data_engine/          # Data analysis
-│   └── research_tools/       # Transparency tools
+│   ├── research_engine/      # Research capabilities
+│   ├── research_tools/       # Transparency tools
+│   └── optimization/         # Performance optimization
 ├── utils/                    # Utilities
 └── templates/                # Styling templates
 ```
